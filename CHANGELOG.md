@@ -1,7 +1,16 @@
 vNext
 
+**New features or improvements**
+- Allow [[..]] filter notation in all text panels (markdown/html/text) (Issue #511)
+- New legend display option "Align as table" (Issue #136)
+- Enhanced InfluxDB series aliasing (legend names) with pattern replacements (Issue #525)
+
 **Changes**
 - Use unix epoch for Graphite from/to for absolute time ranges (Closes #536)
+
+**Fixes**
+- Fix formatting negative values (PR #545)
+
 
 # 1.6.1 (2014-06-24)
 
