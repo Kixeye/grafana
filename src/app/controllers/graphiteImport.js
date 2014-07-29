@@ -6,9 +6,9 @@ define([
 function (angular, app, _) {
   'use strict';
 
-  var module = angular.module('kibana.controllers');
+  var module = angular.module('grafana.controllers');
 
-  module.controller('GraphiteImportCtrl', function($scope, $rootScope, $timeout, datasourceSrv, dashboard) {
+  module.controller('GraphiteImportCtrl', function($scope, $rootScope, $timeout, datasourceSrv) {
 
     $scope.init = function() {
       console.log('hej!');
@@ -68,7 +68,7 @@ function (angular, app, _) {
 
       currentRow = angular.copy(rowTemplate);
 
-      var newDashboard = angular.copy(dashboard.current);
+      var newDashboard = angular.copy($scope.dashboard);
       newDashboard.rows = [];
       newDashboard.title = state.name;
       newDashboard.rows.push(currentRow);
@@ -96,7 +96,7 @@ function (angular, app, _) {
         currentRow.panels.push(panel);
       });
 
-      dashboard.dash_load(newDashboard);
+      $scope.dashboard.dash_load(newDashboard);
     }
 
   });

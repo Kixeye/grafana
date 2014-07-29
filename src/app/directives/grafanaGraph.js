@@ -8,15 +8,16 @@ define([
 function (angular, $, kbn, moment, _) {
   'use strict';
 
-  var module = angular.module('kibana.directives');
+  var module = angular.module('grafana.directives');
 
-  module.directive('grafanaGraph', function($rootScope, dashboard) {
+  module.directive('grafanaGraph', function($rootScope) {
     return {
       restrict: 'A',
       template: '<div> </div>',
       link: function(scope, elem) {
         var data, plot, annotations;
         var hiddenData = {};
+        var dashboard = scope.dashboard;
         var legendSideLastValue = null;
 
         scope.$on('refresh',function() {
@@ -195,7 +196,7 @@ function (angular, $, kbn, moment, _) {
           var max = _.isUndefined(scope.range.to) ? null : scope.range.to.getTime();
 
           options.xaxis = {
-            timezone: dashboard.current.timezone,
+            timezone: dashboard.timezone,
             show: scope.panel['x-axis'],
             mode: "time",
             min: min,
@@ -354,7 +355,7 @@ function (angular, $, kbn, moment, _) {
 
             value = kbn.getFormatFunction(format, 2)(value);
 
-            timestamp = dashboard.current.timezone === 'browser' ?
+            timestamp = dashboard.timezone === 'browser' ?
               moment(item.datapoint[0]).format('YYYY-MM-DD HH:mm:ss') :
               moment.utc(item.datapoint[0]).format('YYYY-MM-DD HH:mm:ss');
             $tooltip
@@ -370,7 +371,7 @@ function (angular, $, kbn, moment, _) {
         function render_panel_as_graphite_png(url) {
           url += '&width=' + elem.width();
           url += '&height=' + elem.css('height').replace('px', '');
-          url += '&bgcolor=1f1f1f'; // @grayDarker & @kibanaPanelBackground
+          url += '&bgcolor=1f1f1f'; // @grayDarker & @grafanaPanelBackground
           url += '&fgcolor=BBBFC2'; // @textColor & @grayLighter
           url += scope.panel.stack ? '&areaMode=stacked' : '';
           url += scope.panel.fill !== 0 ? ('&areaAlpha=' + (scope.panel.fill/10).toFixed(1)) : '';
