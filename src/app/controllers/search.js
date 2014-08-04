@@ -9,13 +9,14 @@ function (angular, _, config, $) {
 
   var module = angular.module('grafana.controllers');
 
-  module.controller('SearchCtrl', function($scope, $rootScope, $element, $location, elastic) {
+  module.controller('SearchCtrl', function($scope, $rootScope, $element, $location, datasourceSrv) {
 
     $scope.init = function() {
       $scope.giveSearchFocus = 0;
       $scope.selectedIndex = -1;
       $scope.results = {dashboards: [], tags: [], metrics: []};
       $scope.query = { query: 'title:' };
+      $scope.db = datasourceSrv.getGrafanaDB();
       $scope.onAppEvent('open-search', $scope.openSearch);
     };
 
@@ -40,7 +41,7 @@ function (angular, _, config, $) {
 
         var selectedDash = $scope.results.dashboards[$scope.selectedIndex];
         if (selectedDash) {
-          $location.path("/dashboard/elasticsearch/" + encodeURIComponent(selectedDash._id));
+          $location.path("/dashboard/db/" + selectedDash.id);
           setTimeout(function() {
             $('body').click(); // hack to force dropdown to close;
           });
@@ -53,44 +54,16 @@ function (angular, _, config, $) {
 
       $scope.share = {
         title: title,
-        url: baseUrl + '#dashboard/elasticsearch/' + encodeURIComponent(id)
+        url: baseUrl + '#dashboard/db/' + encodeURIComponent(id)
       };
     };
 
-    $scope.searchDasboards = function(queryString) {
-      var tagsOnly = queryString.indexOf('tags!:') === 0;
-      if (tagsOnly) {
-        var tagsQuery = queryString.substring(6, queryString.length);
-        queryString = 'tags:' + tagsQuery + '*';
-      }
-      else {
-        if (queryString.length === 0) {
-          queryString = 'title:';
-        }
-
-        if (queryString[queryString.length - 1] !== '*') {
-          queryString += '*';
-        }
-      }
-
-      var query = {
-        query: { query_string: { query: queryString } },
-        facets: { tags: { terms: { field: "tags", order: "term", size: 50 } } },
-        size: 20,
-        sort: ["_uid"]
-      };
-
-      return elastic.post('/dashboard/_search', query)
+    $scope.searchDashboards = function(queryString) {
+      return $scope.db.searchDashboards(queryString)
         .then(function(results) {
-          if(_.isUndefined(results.hits)) {
-            $scope.results.dashboards = [];
-            $scope.results.tags = [];
-            return;
-          }
-
-          $scope.tagsOnly = tagsOnly;
-          $scope.results.dashboards = results.hits.hits;
-          $scope.results.tags = results.facets.tags.terms;
+          $scope.tagsOnly = results.tagsOnly;
+          $scope.results.dashboards = results.dashboards;
+          $scope.results.tags = results.tags;
         });
     };
 
@@ -117,13 +90,7 @@ function (angular, _, config, $) {
       $scope.showImport = false;
       $scope.selectedIndex = -1;
 
-      var queryStr = $scope.query.query.toLowerCase();
-
-      if (queryStr.indexOf('m:') !== 0) {
-        queryStr = queryStr.replace(' and ', ' AND ');
-        $scope.searchDasboards(queryStr);
-        return;
-      }
+      $scope.searchDashboards($scope.query.query);
     };
 
     $scope.openSearch = function (evt) {

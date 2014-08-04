@@ -12,7 +12,7 @@ function (angular, app, _) {
   var module = angular.module('grafana.panels.annotations', []);
   app.useModule(module);
 
-  module.controller('AnnotationsEditorCtrl', function($scope, datasourceSrv, $rootScope) {
+  module.controller('AnnotationsEditorCtrl', function($scope, datasourceSrv) {
 
     var annotationDefaults = {
       name: '',
@@ -56,12 +56,7 @@ function (angular, app, _) {
     $scope.add = function() {
       $scope.currentAnnotation.datasource = $scope.currentDatasource.name;
       $scope.panel.annotations.push($scope.currentAnnotation);
-      $scope.currentAnnnotation = angular.copy(annotationDefaults);
-    };
-
-    $scope.hide = function (annotation) {
-      annotation.enable = !annotation.enable;
-      $rootScope.$broadcast('refresh');
+      $scope.currentAnnotation = angular.copy(annotationDefaults);
     };
 
   });
