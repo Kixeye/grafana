@@ -45,16 +45,16 @@
           </span>
         </div>
 
-        <h6 ng-hide="results.dashboards.length || results.metrics.length">No dashboards or metrics matching your query found</h6>
+        <h6 ng-hide="results.dashboards.length">No dashboards matching your query were found.</h6>
 
         <div class="search-results-container" ng-if="tagsOnly">
 					<div ng-repeat="tag in results.tags"
 						   class="search-result-item pointer"
 							 ng-class="{'selected': $index === selectedIndex }"
 							 ng-click="filterByTag(tag.term, $event)">
-						<a class="search-result-link" >
+						<a class="search-result-tag label label-tag" tag-color-from-name>
 							<i class="icon icon-tag"></i>
-							<span class="label label-tag">{{tag.term}} &nbsp;({{tag.count}})</span>
+							<span>{{tag.term}} &nbsp;({{tag.count}})</span>
 						</a>
           </div>
         </div>
@@ -64,7 +64,7 @@
 							bindonce ng-repeat="row in results.dashboards"
 							ng-class="{'selected': $index === selectedIndex }" ng-click="goToDashboard(row.id)">
 
-							<div class="search-result-actions">
+							<div class="search-result-actions small">
 								<a ng-click="shareDashboard(row.id, row.id, $event)" config-modal="app/partials/dashLoaderShare.html">
 									<i class="icon-share"></i> share &nbsp;&nbsp;&nbsp;
 								</a>
@@ -74,14 +74,14 @@
 							</div>
 
 							<div class="search-result-tags">
-								<a ng-click="filterByTag(tag, $event)" ng-repeat="tag in row.tags" style="margin-right: 5px;" class="label label-tag">
+								<a ng-click="filterByTag(tag, $event)" ng-repeat="tag in row.tags" tag-color-from-name  class="label label-tag">
 									{{tag}}
 								</a>
 							</div>
 
 							<a class="search-result-link">
 								<i class="icon icon-th-large"></i>
-								<span bo-text="row.id"></span>
+								<span bo-text="row.title"></span>
 							</a>
 
 					</div>
