@@ -11,7 +11,7 @@ function (angular, _, moment, config, store) {
 
   var module = angular.module('grafana.controllers');
 
-  module.controller('DashboardNavCtrl', function($scope, $rootScope, alertSrv, $location, playlistSrv, datasourceSrv) {
+  module.controller('DashboardNavCtrl', function($scope, $rootScope, alertSrv, $location, playlistSrv, datasourceSrv, timeSrv) {
 
     $scope.init = function() {
       $scope.db = datasourceSrv.getGrafanaDB();
@@ -69,6 +69,10 @@ function (angular, _, moment, config, store) {
       return false;
     };
 
+    $scope.openSearch = function() {
+      $scope.emitAppEvent('show-dash-editor', { src: 'app/partials/search.html' });
+    };
+
     $scope.saveDashboard = function() {
       if (!this.isAdmin()) { return false; }
 
@@ -108,10 +112,8 @@ function (angular, _, moment, config, store) {
       window.saveAs(blob, $scope.dashboard.title + '-' + new Date().getTime());
     };
 
-    // function $scope.zoom
-    // factor :: Zoom factor, so 0.5 = cuts timespan in half, 2 doubles timespan
     $scope.zoom = function(factor) {
-      var range = $scope.filter.timeRange();
+      var range = timeSrv.timeRange();
 
       var timespan = (range.to.valueOf() - range.from.valueOf());
       var center = range.to.valueOf() - timespan/2;
@@ -125,14 +127,20 @@ function (angular, _, moment, config, store) {
         to = Date.now();
       }
 
-      $scope.filter.setTime({
-        from:moment.utc(from).toDate(),
-        to:moment.utc(to).toDate(),
+      timeSrv.setTime({
+        from: moment.utc(from).toDate(),
+        to: moment.utc(to).toDate(),
       });
     };
 
     $scope.styleUpdated = function() {
       $scope.grafana.style = $scope.dashboard.style;
+    };
+
+    $scope.editJson = function() {
+      var editScope = $rootScope.$new();
+      editScope.json = angular.toJson($scope.dashboard, true);
+      $scope.emitAppEvent('show-dash-editor', { src: 'app/partials/edit_json.html', scope: editScope });
     };
 
     $scope.openSaveDropdown = function() {
