@@ -2,9 +2,10 @@ define([
   'angular',
   'lodash',
   'kbn',
-  './influxSeries'
+  './influxSeries',
+  './influxQueryBuilder'
 ],
-function (angular, _, kbn, InfluxSeries) {
+function (angular, _, kbn, InfluxSeries, InfluxQueryBuilder) {
   'use strict';
 
   var module = angular.module('grafana.services');
@@ -32,88 +33,25 @@ function (angular, _, kbn, InfluxSeries) {
     }
 
     InfluxDatasource.prototype.query = function(options) {
-      var promises = _.map(options.targets, function(target) {
-        var query;
-        var alias = '';
+      var timeFilter = getTimeFilter(options);
 
+      var promises = _.map(options.targets, function(target) {
         if (target.hide || !((target.series && target.column) || target.query)) {
           return [];
         }
 
-        var timeFilter = getTimeFilter(options);
-        var groupByField;
+        // build query
+        var queryBuilder = new InfluxQueryBuilder(target);
+        var query = queryBuilder.build();
 
-        if (target.rawQuery) {
-          query = target.query;
-          query = query.replace(";", "");
-          var queryElements = query.split(" ");
-          var lowerCaseQueryElements = query.toLowerCase().split(" ");
-          var whereIndex = lowerCaseQueryElements.indexOf("where");
-          var groupByIndex = lowerCaseQueryElements.indexOf("group");
-          var orderIndex = lowerCaseQueryElements.indexOf("order");
+        // replace templated variables
+        templateSrv.setGrafanaVariable('$timeFilter', timeFilter);
+        templateSrv.setGrafanaVariable('$interval', (target.interval || options.interval));
+        query = templateSrv.replace(query);
 
-          if (lowerCaseQueryElements[1].indexOf(',') !== -1) {
-            groupByField = lowerCaseQueryElements[1].replace(',', '');
-          }
+        var alias = target.alias ? templateSrv.replace(target.alias) : '';
 
-          if (whereIndex !== -1) {
-            queryElements.splice(whereIndex + 1, 0, timeFilter, "and");
-          }
-          else {
-            if (groupByIndex !== -1) {
-              queryElements.splice(groupByIndex, 0, "where", timeFilter);
-            }
-            else if (orderIndex !== -1) {
-              queryElements.splice(orderIndex, 0, "where", timeFilter);
-            }
-            else {
-              queryElements.push("where");
-              queryElements.push(timeFilter);
-            }
-          }
-
-          query = queryElements.join(" ");
-          query = templateSrv.replace(query);
-        }
-        else {
-
-          var template = "select [[group]][[group_comma]] [[func]]([[column]]) from [[series]] " +
-                         "where  [[timeFilter]] [[condition_add]] [[condition_key]] [[condition_op]] [[condition_value]] " +
-                         "group by time([[interval]])[[group_comma]] [[group]] order asc";
-
-          var templateData = {
-            series: target.series,
-            column: target.column,
-            func: target.function,
-            timeFilter: timeFilter,
-            interval: target.interval || options.interval,
-            condition_add: target.condition_filter ? 'and' : '',
-            condition_key: target.condition_filter ? target.condition_key : '',
-            condition_op: target.condition_filter ? target.condition_op : '',
-            condition_value: target.condition_filter ? target.condition_value : '',
-            group_comma: target.groupby_field_add && target.groupby_field ? ',' : '',
-            group: target.groupby_field_add ? target.groupby_field : '',
-          };
-
-          if(!templateData.series.match('^/.*/')) {
-            templateData.series = '"' + templateData.series + '"';
-          }
-
-          query = _.template(template, templateData, this.templateSettings);
-          query = templateSrv.replace(query);
-
-          if (target.groupby_field_add) {
-            groupByField = target.groupby_field;
-          }
-
-          target.query = query;
-        }
-
-        if (target.alias) {
-          alias = templateSrv.replace(target.alias);
-        }
-
-        var handleResponse = _.partial(handleInfluxQueryResponse, alias, groupByField);
+        var handleResponse = _.partial(handleInfluxQueryResponse, alias, queryBuilder.groupByField);
         return this._seriesQuery(query).then(handleResponse);
 
       }, this);
@@ -121,20 +59,24 @@ function (angular, _, kbn, InfluxSeries) {
       return $q.all(promises).then(function(results) {
         return { data: _.flatten(results) };
       });
-
     };
 
-    InfluxDatasource.prototype.annotationQuery = function(annotation, filterSrv, rangeUnparsed) {
+    InfluxDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
       var timeFilter = getTimeFilter({ range: rangeUnparsed });
-      var query = _.template(annotation.query, { timeFilter: timeFilter }, this.templateSettings);
+      var query = _.template(annotation.query, { timeFilter: timeFilter, "$timeFilter": timeFilter }, this.templateSettings);
 
       return this._seriesQuery(query).then(function(results) {
         return new InfluxSeries({ seriesList: results, annotation: annotation }).getAnnotations();
       });
     };
-    InfluxDatasource.prototype.listColumns = function(seriesName) {
 
-      return this._seriesQuery('select * from /' + seriesName + '/ limit 1').then(function(data) {
+    InfluxDatasource.prototype.listColumns = function(seriesName) {
+      var interpolated = templateSrv.replace(seriesName);
+      if (interpolated[0] !== '/') {
+        interpolated = '/' + interpolated + '/';
+      }
+
+      return this._seriesQuery('select * from ' + interpolated + ' limit 1').then(function(data) {
         if (!data) {
           return [];
         }
@@ -161,7 +103,7 @@ function (angular, _, kbn, InfluxSeries) {
       });
     };
 
-    InfluxDatasource.prototype.metricFindQuery = function (filterSrv, query) {
+    InfluxDatasource.prototype.metricFindQuery = function (query) {
       var interpolated;
       try {
         interpolated = templateSrv.replace(query);
