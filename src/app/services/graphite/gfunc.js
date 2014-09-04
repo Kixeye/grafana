@@ -24,6 +24,14 @@ function (_) {
     index[funcDef.shortName || funcDef.name] = funcDef;
   }
 
+  var optionalSeriesRefArgs = [
+    { name: 'other', type: 'value_or_series', optional: true },
+    { name: 'other', type: 'value_or_series', optional: true },
+    { name: 'other', type: 'value_or_series', optional: true },
+    { name: 'other', type: 'value_or_series', optional: true },
+    { name: 'other', type: 'value_or_series', optional: true }
+  ];
+
   addFuncDef({
     name: 'scaleToSeconds',
     category: categories.Transform,
@@ -59,22 +67,14 @@ function (_) {
 
   addFuncDef({
     name: 'diffSeries',
-    params: [
-      { name: 'other', type: 'value_or_series', optional: true },
-      { name: 'other', type: 'value_or_series', optional: true },
-      { name: 'other', type: 'value_or_series', optional: true }
-    ],
-    defaultParams: ['$B'],
+    params: optionalSeriesRefArgs,
+    defaultParams: ['#B'],
     category: categories.Calculate,
   });
 
   addFuncDef({
     name: 'asPercent',
-    params: [
-      { name: 'other', type: 'value_or_series', optional: true },
-      { name: 'other', type: 'value_or_series', optional: true },
-      { name: 'other', type: 'value_or_series', optional: true }
-    ],
+    params: optionalSeriesRefArgs,
     defaultParams: ['#A'],
     category: categories.Calculate,
   });
@@ -83,12 +83,16 @@ function (_) {
     name: 'sumSeries',
     shortName: 'sum',
     category: categories.Combine,
+    params: optionalSeriesRefArgs,
+    defaultParams: [''],
   });
 
   addFuncDef({
     name: 'averageSeries',
     shortName: 'avg',
     category: categories.Combine,
+    params: optionalSeriesRefArgs,
+    defaultParams: [''],
   });
 
   addFuncDef({
@@ -499,9 +503,14 @@ function (_) {
     categories[catName] = _.sortBy(funcList, 'name');
   });
 
-  function FuncInstance(funcDef) {
+  function FuncInstance(funcDef, options) {
     this.def = funcDef;
-    this.params = funcDef.defaultParams.slice(0);
+    this.params = [];
+
+    if (options && options.withDefaultParams) {
+      this.params = funcDef.defaultParams.slice(0);
+    }
+
     this.updateText();
   }
 
@@ -522,7 +531,7 @@ function (_) {
       parameters.unshift(metricExp);
     }
 
-    return str + parameters.join(',') + ')';
+    return str + parameters.join(', ') + ')';
   };
 
   FuncInstance.prototype._hasMultipleParamsInString = function(strValue, index) {
@@ -563,27 +572,20 @@ function (_) {
     }
 
     var text = this.def.name + '(';
-    _.each(this.def.params, function(param, index) {
-      if (param.optional && this.params[index] === undefined) {
-        return;
-      }
-
-      text += this.params[index] + ', ';
-    }, this);
-    text = text.substring(0, text.length - 2);
+    text += this.params.join(', ');
     text += ')';
     this.text = text;
   };
 
   return {
-    createFuncInstance: function(funcDef) {
+    createFuncInstance: function(funcDef, options) {
       if (_.isString(funcDef)) {
         if (!index[funcDef]) {
           throw { message: 'Method not found ' + name };
         }
         funcDef = index[funcDef];
       }
-      return new FuncInstance(funcDef);
+      return new FuncInstance(funcDef, options);
     },
 
     getFuncDef: function(name) {

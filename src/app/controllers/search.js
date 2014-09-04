@@ -31,10 +31,10 @@ function (angular, _, config, $) {
         $scope.emitAppEvent('hide-dash-editor');
       }
       if (evt.keyCode === 40) {
-        $scope.selectedIndex++;
+        $scope.moveSelection(1);
       }
       if (evt.keyCode === 38) {
-        $scope.selectedIndex--;
+        $scope.moveSelection(-1);
       }
       if (evt.keyCode === 13) {
         if ($scope.tagsOnly) {
@@ -54,6 +54,10 @@ function (angular, _, config, $) {
           });
         }
       }
+    };
+
+    $scope.moveSelection = function(direction) {
+      $scope.selectedIndex = Math.max(Math.min($scope.selectedIndex + direction, $scope.resultCount - 1), 0);
     };
 
     $scope.goToDashboard = function(id) {
@@ -76,6 +80,7 @@ function (angular, _, config, $) {
           $scope.tagsOnly = results.tagsOnly;
           $scope.results.dashboards = results.dashboards;
           $scope.results.tags = results.tags;
+          $scope.resultCount = results.tagsOnly ? results.tags.length : results.dashboards.length;
         });
     };
 
@@ -89,8 +94,7 @@ function (angular, _, config, $) {
       }
     };
 
-    $scope.showTags = function(evt) {
-      evt.stopPropagation();
+    $scope.showTags = function() {
       $scope.tagsOnly = !$scope.tagsOnly;
       $scope.query.query = $scope.tagsOnly ? "tags!:" : "";
       $scope.giveSearchFocus = $scope.giveSearchFocus + 1;
@@ -101,8 +105,12 @@ function (angular, _, config, $) {
     $scope.search = function() {
       $scope.showImport = false;
       $scope.selectedIndex = 0;
-
       $scope.searchDashboards($scope.query.query);
+    };
+
+    $scope.deleteDashboard = function(id, evt) {
+      evt.stopPropagation();
+      $scope.emitAppEvent('delete-dashboard', { id: id });
     };
 
     $scope.addMetricToCurrentDashboard = function (metricId) {
@@ -121,8 +129,7 @@ function (angular, _, config, $) {
       });
     };
 
-    $scope.toggleImport = function ($event) {
-      $event.stopPropagation();
+    $scope.toggleImport = function () {
       $scope.showImport = !$scope.showImport;
     };
 
