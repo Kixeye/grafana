@@ -9,9 +9,8 @@ function (angular, _) {
   module.service('panelSrv', function($rootScope, $timeout, datasourceSrv) {
 
     this.init = function($scope) {
-      if (!$scope.panel.span) {
-        $scope.panel.span = 12;
-      }
+      if (!$scope.panel.span) { $scope.panel.span = 12; }
+      if (!$scope.panel.title) { $scope.panel.title = 'No title'; }
 
       var menu = [
         {
@@ -95,7 +94,7 @@ function (angular, _) {
         $scope.datasource = datasourceSrv.get(datasource);
 
         if (!$scope.datasource) {
-          $scope.panel.error = "Cannot find datasource " + datasource;
+          $scope.panelMeta.error = "Cannot find datasource " + datasource;
           return;
         }
       };
@@ -129,7 +128,7 @@ function (angular, _) {
         $scope.get_data = function() {
           if ($scope.otherPanelInFullscreenMode()) { return; }
 
-          delete $scope.panel.error;
+          delete $scope.panelMeta.error;
           $scope.panelMeta.loading = true;
 
           panel_get_data();

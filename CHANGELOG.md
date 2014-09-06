@@ -3,11 +3,33 @@
 **UI polish / changes**
 - [Issue #725](https://github.com/grafana/grafana/issues/725). UI: All modal editors are removed and replaced by an edit pane under menu. The look of editors is also updated and polished. Search dropdown is also shown as pane under menu and has seen some UI polish.
 
-**Filtering feature overhaul**
+**Filtering/Templating feature overhaul**
 - Filtering renamed to Templating, and filter items to variables
 - Filter editing has gotten its own edit pane with much improved UI and options
 - [Issue #296](https://github.com/grafana/grafana/issues/296). Templating: Can now retrieve variable values from a non-default data source
 - [Issue #219](https://github.com/grafana/grafana/issues/219). Templating: Template variable value selection is now a typeahead autocomplete dropdown
+- [Issue #760](https://github.com/grafana/grafana/issues/760). Templating: Extend template variable syntax to include $variable syntax replacement
+- [Issue #234](https://github.com/grafana/grafana/issues/234). Templating: Interval variable type for time intervals summarize/group by parameter, included "auto" option, and auto step counts option.
+- [Issue #262](https://github.com/grafana/grafana/issues/262). Templating: Ability to use template variables for function parameters via custom variable type, can be used as parameter for movingAverage or scaleToSeconds for example
+- [Issue #312](https://github.com/grafana/grafana/issues/312). Templating: Can now use template variables in panel titles
+- [Issue #613](https://github.com/grafana/grafana/issues/613). Templating: Full support for InfluxDB, filter by part of series names, extract series substrings, nested queries, multipe where clauses!
+
+**InfluxDB Breaking changes**
+- To better support templating, fill(0) and group by time low limit some changes has been made to the editor and query model schema
+- Currently some of these changes are breaking
+- If you used custom condition filter you need to open the graph in edit mode, the editor will update the schema, and the queries should work again
+- If you used a raw query you need to remove the time filter and replace it with $timeFilter (this is done automatically when you switch from query editor to raw query, but old raw queries needs to updated)
+- If you used group by and later removed the group by the graph could break, open in editor and should correct it
+- InfluxDB annotation queries that used [[timeFilter]] should be updated to use $timeFilter syntax instead
+- Might write an upgrade tool to update dashboards automatically, but right now master (1.8) includes the above breaking changes
+
+**InfluxDB query editor enhancements**
+- [Issue #756](https://github.com/grafana/grafana/issues/756). InfluxDB: Add option for fill(0) and fill(null), integrated help in editor for why this option is important when stacking series
+- [Issue #743](https://github.com/grafana/grafana/issues/743). InfluxDB: A group by time option for all queries in graph panel that supports a low limit for auto group by time, very important for stacking and fill(0)
+- The above to enhancements solves the problems associated with stacked bars and lines when points are missing, these issues are solved:
+- [Issue #673](https://github.com/grafana/grafana/issues/673). InfluxDB: stacked bars missing intermediate data points, unless lines also enabled
+- [Issue #674](https://github.com/grafana/grafana/issues/674). InfluxDB: stacked chart ignoring series without latest values
+- [Issue #534](https://github.com/grafana/grafana/issues/534). InfluxDB: No order in stacked bars mode
 
 **New features and improvements**
 - [Issue #117](https://github.com/grafana/grafana/issues/117). Graphite: Graphite query builder can now handle functions that multiple series as arguments!
