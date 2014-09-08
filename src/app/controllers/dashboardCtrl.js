@@ -44,14 +44,14 @@ function (angular, $, config, _) {
     $scope.setupDashboard = function(event, dashboardData) {
       $rootScope.performance.dashboardLoadStart = new Date().getTime();
       $rootScope.performance.panelsInitialized = 0;
-      $rootScope.performance.panelsRendered= 0;
+      $rootScope.performance.panelsRendered = 0;
 
       $scope.dashboard = dashboardSrv.create(dashboardData);
       $scope.dashboardViewState = dashboardViewStateSrv.create($scope);
 
       // init services
       timeSrv.init($scope.dashboard);
-      templateValuesSrv.init($scope.dashboard);
+      templateValuesSrv.init($scope.dashboard, $scope.dashboardViewState);
       panelMoveSrv.init($scope.dashboard, $scope);
 
       $scope.checkFeatureToggles();
@@ -91,14 +91,6 @@ function (angular, $, config, _) {
         height: '250px',
         editable: true,
       };
-    };
-
-    $scope.panel_path =function(type) {
-      if(type) {
-        return 'app/panels/'+type.replace(".","/");
-      } else {
-        return false;
-      }
     };
 
     $scope.edit_path = function(type) {
