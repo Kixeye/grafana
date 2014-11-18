@@ -127,7 +127,7 @@
 
 .panel-fullscreen {
   z-index: 100;
-  display: block !important;
+  display: block;
   position: fixed;
   left: 0px;
   right: 0px;
@@ -143,11 +143,10 @@
   }
 }
 
-.dashboard-fullscreen .container-fluid.main {
-  height: 0px;
-  width: 0px;
-  position: fixed;
-  right: -10000px;
+.dashboard-fullscreen {
+  .row-control-inner {
+    display: none;
+  }
 }
 
 .histogram-chart {
